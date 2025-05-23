@@ -20,7 +20,12 @@ const server = http.createServer(app);
 const io = socketManager.init(server);
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true, // if you need to allow cookies/auth headers
+  })
+);
 app.use(express.json());
 
 // Routes
