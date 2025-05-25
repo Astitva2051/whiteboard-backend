@@ -7,6 +7,7 @@ const {
   joinRoom,
   leaveRoom,
   deleteRoom,
+  getRoomMessages,
 } = require("../controllers/roomController");
 const { protect } = require("../middleware/auth");
 
@@ -17,5 +18,6 @@ router.post("/join", protect, joinRoom);
 router.route("/:id").get(protect, getRoom).delete(protect, deleteRoom);
 
 router.delete("/:id/leave", protect, leaveRoom);
+router.get("/:id/messages", protect, getRoomMessages);
 
 module.exports = router;

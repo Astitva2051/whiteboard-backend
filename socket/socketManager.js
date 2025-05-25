@@ -2,6 +2,7 @@ const socketIO = require("socket.io");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Room = require("../models/Room");
+const Message = require("../models/Message");
 
 let io;
 
@@ -52,7 +53,6 @@ exports.init = (server) => {
     socket.on("join-room", async ({ roomId }) => {
       try {
         const room = await Room.findOne({ roomId });
-
         if (!room) {
           socket.emit("error", { message: "Room not found" });
           return;
@@ -60,6 +60,21 @@ exports.init = (server) => {
 
         // Join socket to room
         socket.join(roomId);
+
+        // Fetch and format message history
+        const messages = await Message.find({ room: room._id })
+          .populate("user", "username")
+          .sort({ createdAt: 1 });
+
+        // Format messages before sending
+        const formattedMessages = messages.map((msg) => ({
+          userId: msg.user._id.toString(),
+          username: msg.user.username,
+          message: msg.content,
+          timestamp: msg.createdAt.toISOString(),
+        }));
+
+        socket.emit("message-history", formattedMessages);
 
         // Notify others in the room
         socket.to(roomId).emit("user-connected", {
@@ -167,13 +182,31 @@ exports.init = (server) => {
     });
 
     // Chat message
-    socket.on("send-message", ({ roomId, message }) => {
-      io.to(roomId).emit("receive-message", {
-        userId: socket.user.id,
-        username: socket.user.username,
-        message,
-        timestamp: new Date(),
-      });
+    socket.on("send-message", async ({ roomId, message }) => {
+      try {
+        const room = await Room.findOne({ roomId });
+
+        // Save message to database
+        const newMessage = await Message.create({
+          room: room._id,
+          user: socket.user.id,
+          content: message,
+        });
+
+        // Add message reference to room
+        room.messages.push(newMessage._id);
+        await room.save();
+
+        // Format message before broadcasting
+        io.to(roomId).emit("receive-message", {
+          userId: socket.user.id,
+          username: socket.user.username,
+          message: message,
+          timestamp: newMessage.createdAt.toISOString(),
+        });
+      } catch (error) {
+        console.error("Error saving message:", error);
+      }
     });
 
     // Disconnect

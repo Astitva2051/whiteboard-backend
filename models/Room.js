@@ -27,6 +27,12 @@ const RoomSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: "Whiteboard",
   },
+  messages: [
+    {
+      type: mongoose.Schema.ObjectId,
+      ref: "Message",
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,

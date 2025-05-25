@@ -1,5 +1,6 @@
 const Room = require("../models/Room");
 const Whiteboard = require("../models/Whiteboard");
+const Message = require("../models/Message");
 const { v4: uuidv4 } = require("uuid");
 
 /**
@@ -186,6 +187,43 @@ exports.deleteRoom = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: {},
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * @desc    Get room chat history
+ * @route   GET /api/rooms/:id/messages
+ * @access  Private
+ */
+exports.getRoomMessages = async (req, res, next) => {
+  try {
+    const room = await Room.findOne({ roomId: req.params.id });
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found",
+      });
+    }
+
+    const messages = await Message.find({ room: room._id })
+      .populate("user", "username")
+      .sort({ createdAt: 1 });
+
+    // Format messages to match frontend requirements
+    const formattedMessages = messages.map((msg) => ({
+      userId: msg.user._id.toString(),
+      username: msg.user.username,
+      message: msg.content,
+      timestamp: msg.createdAt.toISOString(),
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedMessages,
     });
   } catch (err) {
     next(err);
