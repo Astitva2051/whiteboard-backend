@@ -67,21 +67,27 @@ exports.init = (server) => {
           username: socket.user.username,
         });
 
-        // Send current users in the room
-        const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
-        const users = await Promise.all(
-          clients.map(async (clientId) => {
-            const clientSocket = io.sockets.sockets.get(clientId);
-            return clientSocket.user;
-          })
-        );
-
-        socket.emit("room-users", users);
-
         console.log(`${socket.user.username} joined room: ${roomId}`);
       } catch (error) {
         socket.emit("error", { message: "Failed to join room" });
       }
+    });
+
+    // Send current users in the room
+    const getUsersInRoom = async (roomId) => {
+      const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+      const users = await Promise.all(
+        clients.map(async (clientId) => {
+          const clientSocket = io.sockets.sockets.get(clientId);
+          return clientSocket.user;
+        })
+      );
+      return users; // Add this return statement
+    };
+
+    socket.on("room-users", async ({ roomId }) => {
+      const users = await getUsersInRoom(roomId);
+      io.to(roomId).emit("room-users", users); // Broadcast to all users in the room
     });
 
     // Leave room
@@ -122,21 +128,10 @@ exports.init = (server) => {
     // Add element (path, shape, text, erase, etc.)
     socket.on("add-element", ({ roomId, element }) => {
       // Broadcast to all users in the room except sender
+
       socket.to(roomId).emit("add-element", {
         userId: socket.user.id,
         element,
-      });
-    });
-
-    // Add text
-    socket.on("add-text", ({ roomId, text, x, y, fontSize, color }) => {
-      socket.to(roomId).emit("add-text", {
-        userId: socket.user.id,
-        text,
-        x,
-        y,
-        fontSize,
-        color,
       });
     });
 
@@ -157,7 +152,18 @@ exports.init = (server) => {
     socket.on("clear-board", ({ roomId }) => {
       socket.to(roomId).emit("clear-board", {
         userId: socket.user.id,
+        username: socket.user.username,
       });
+    });
+
+    // Sync elements after undo/redo
+    socket.on("sync-elements", ({ roomId, elements }) => {
+      // Broadcast to all users in the room except the sender
+      socket.to(roomId).emit("sync-elements", { elements });
+    });
+
+    socket.on("update-element", ({ roomId, element }) => {
+      socket.to(roomId).emit("update-element", { element });
     });
 
     // Chat message

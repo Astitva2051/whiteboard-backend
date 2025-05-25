@@ -128,7 +128,7 @@ exports.joinRoom = async (req, res, next) => {
  */
 exports.leaveRoom = async (req, res, next) => {
   try {
-    const room = await Room.findById(req.params.id);
+    const room = await Room.findOne({ roomId: req.params.id });
 
     if (!room) {
       return res.status(404).json({
@@ -160,7 +160,7 @@ exports.leaveRoom = async (req, res, next) => {
  */
 exports.deleteRoom = async (req, res, next) => {
   try {
-    const room = await Room.findById(req.params.id);
+    const room = await Room.findOne({ roomId: req.params.id });
 
     if (!room) {
       return res.status(404).json({
