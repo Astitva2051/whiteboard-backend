@@ -22,8 +22,10 @@ const io = socketManager.init(server);
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true, // if you need to allow cookies/auth headers
+    origin: process.env.FRONTEND_URL.split(","),
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json());
