@@ -12,7 +12,7 @@ let io;
 exports.init = (server) => {
   io = socketIO(server, {
     cors: {
-      origin: "*",
+      origin: process.env.FRONTEND_URL,
       methods: ["GET", "POST"],
     },
   });
