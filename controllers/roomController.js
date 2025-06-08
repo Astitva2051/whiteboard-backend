@@ -51,7 +51,7 @@ exports.getRooms = async (req, res, next) => {
   try {
     const rooms = await Room.find({
       $or: [{ createdBy: req.user.id }, { participants: req.user.id }],
-    }).populate("createdBy", "username");
+    }).populate("createdBy", "username _id");
 
     res.status(200).json({
       success: true,
