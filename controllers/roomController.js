@@ -2,6 +2,7 @@ const Room = require("../models/Room");
 const Whiteboard = require("../models/Whiteboard");
 const Message = require("../models/Message");
 const { v4: uuidv4 } = require("uuid");
+const mongoose = require("mongoose");
 
 /**
  * @desc    Create a new room
@@ -20,7 +21,7 @@ exports.createRoom = async (req, res, next) => {
       name,
       roomId,
       createdBy: req.user.id,
-      participants: [req.user.id],
+      participants: [mongoose.Types.ObjectId(req.user.id)],
     });
 
     // Create whiteboard for the room
@@ -109,7 +110,7 @@ exports.joinRoom = async (req, res, next) => {
 
     // Check if user is already in the room
     if (!room.participants.includes(req.user.id)) {
-      room.participants.push(req.user.id);
+      room.participants.push(mongoose.Types.ObjectId(req.user.id));
       await room.save();
     }
 
