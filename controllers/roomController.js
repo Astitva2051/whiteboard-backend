@@ -177,6 +177,11 @@ exports.deleteRoom = async (req, res, next) => {
         success: false,
         message: "Not authorized to delete this room",
       });
+    } else if (room.participants.length > 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete room with participants still in it",
+      });
     }
 
     // Delete whiteboard
